@@ -1,4 +1,5 @@
 #include "Interpreter.h"
+#include "Expr.h"
 #include "Token.h"
 #include "RuntimeError.h"
 #include <iostream>
@@ -76,6 +77,16 @@ Object Interpreter::operator()(const Binary& expr) {
     return {};
 }
 
+Object Interpreter::operator()(const Variable& expr) {
+    return environment->get(expr.name);
+}
+
+Object Interpreter::operator()(const Assign& expr) {
+    Object value = evaluate(*expr.value);
+    environment->assign(expr.name, value);
+    return value;
+}
+
 void Interpreter::operator()(const Print& stmt) {
     Object value = evaluate(*stmt.expression);
     std::cout << stringify(value) << std::endl;
@@ -88,7 +99,35 @@ void Interpreter::operator()(const Expression& stmt) {
 }
 
 void Interpreter::operator()(const Var& stmt) {
+    Object value = nullptr;
+    if(stmt.initializer != NULL) {
+        value = evaluate(*stmt.initializer);
+    }
+    environment->define(stmt.name.lexeme, value);
     return;
+}
+
+void Interpreter::operator()(const Block& stmt) {
+    Environment currBlockEnv = Environment(*environment);
+    executeBlock(stmt.statements, currBlockEnv);
+    return;
+}
+
+void Interpreter::executeBlock(const std::vector<std::unique_ptr<Stmt>>& statements, Environment& env) {
+    Environment *prev = this->environment;
+
+    try {
+        this->environment = &env;
+
+        for(auto& statement: statements) {
+            execute(*statement);
+        }
+    } catch(const RuntimeError& e) {
+        this->environment = prev;
+        throw;
+    }
+    this->environment = prev;
+
 }
 
 bool Interpreter::isTruthy(const Object& object) {
@@ -146,4 +185,3 @@ std::string Interpreter::stringify(const Object& object) {
 
     return std::get<std::string>(object);
 }
-

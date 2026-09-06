@@ -5,6 +5,7 @@
 
 struct Expr;
 struct Binary;
+struct Assign;
 struct Unary;
 struct Grouping;
 struct Literal;
@@ -30,10 +31,15 @@ struct Binary {
     std::unique_ptr<Expr> right;
 };
 
+struct Assign {
+    Token name;
+    std::unique_ptr<Expr> value;
+};
+
 struct Variable {
     Token name;
 };
 
 struct Expr {
-    std::variant<Binary, Unary, Grouping, Literal, Variable> value; 
+    std::variant<Binary, Assign, Unary, Grouping, Literal, Variable> value; 
 }; 

@@ -1,6 +1,8 @@
 #include "Parser.h"
 #include "Lox.h"
+#include "Token.h"
 #include <memory>
+#include <variant>
 
 Parser::Parser(std::vector<Token> tokens): tokens(tokens) {};
 
@@ -39,6 +41,7 @@ std::unique_ptr<Stmt> Parser::varDeclaration() {
 
 std::unique_ptr<Stmt> Parser::statement() {
     if(match({TokenType::Print})) return printStatement();
+    if(match({TokenType::LeftBrace})) return std::make_unique<Stmt>(Block{block()});
     return expressionStatement();
 }
 
@@ -54,6 +57,16 @@ std::unique_ptr<Stmt> Parser::expressionStatement() {
     return std::make_unique<Stmt>(Expression{std::move(value)});
 }
 
+std::vector<std::unique_ptr<Stmt>> Parser::block() {
+    std::vector<std::unique_ptr<Stmt>> statements;
+    while(!check(TokenType::RightBrace) && !isAtEnd()) {
+        statements.push_back(declaration());
+    }
+
+    consume(TokenType::RightBrace, "Expect '}' after block.");
+    return statements;
+}
+
 Token Parser::advance() {
     if(!isAtEnd()) current++;
     return previous();
@@ -61,7 +74,25 @@ Token Parser::advance() {
 }
 
 std::unique_ptr<Expr> Parser::expression() {
-    return equality();
+    return assignment();
+}
+
+std::unique_ptr<Expr> Parser::assignment() {
+    std::unique_ptr<Expr> expr = equality();
+
+    if(match({TokenType::Equal})) {
+        Token equals = previous();
+        std::unique_ptr<Expr> value = assignment();
+        if(std::holds_alternative<Variable>(expr->value)) {
+            Token name = std::get<Variable>(expr->value).name;
+
+            return std::make_unique<Expr>(Assign{name, std::move(value)});
+        }
+
+        error(equals, "Invalid assignment target");
+    }
+
+    return expr;
 }
 
 std::unique_ptr<Expr> Parser::equality(){

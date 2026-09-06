@@ -1,5 +1,6 @@
 #pragma once
 #include "Expr.h"
+#include <vector>
 
 struct Print;
 struct Expression;
@@ -19,6 +20,10 @@ struct Var {
     std::unique_ptr<Expr> initializer;
 };
 
+struct Block {
+    std::vector<std::unique_ptr<Stmt>> statements;
+};
+
 struct Stmt {
-    std::variant<Expression, Print, Var> value;
+    std::variant<Expression, Print, Var, Block> value;
 };
