@@ -9,8 +9,7 @@ int main(int argc, char** argv) {
     }
 
 
-    Lox lox = Lox();
-    lox.runFile(argv[1]);
+    Lox::runFile(argv[1]);
 
     return 0;
 }

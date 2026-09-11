@@ -144,7 +144,7 @@ void Scanner::identifier() {
 
 void Scanner::multiLineComment() {
     //continue till */ if there is newline in the comment increment line
-    while(peek()!='*' && peekNext()!='/' && !AtEnd()) {
+    while((peek()!='*' || peekNext()!='/') && !AtEnd()) {
         if (advance() == '\n') {
             line++;
         }
